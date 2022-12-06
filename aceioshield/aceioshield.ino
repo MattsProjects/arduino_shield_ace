@@ -1,18 +1,15 @@
 /*
-	Copyright 2017 Matthew Breit <matt.breit@gmail.com>
-
-	Licensed under the Apache License, Version 2.0 (the "License");
-	you may not use this file except in compliance with the License.
-	You may obtain a copy of the License at
-
+  Copyright 2017 Matthew Breit <matt.breit@gmail.com>
+  Licensed under the Apache License, Version 2.0 (the "License");
+  you may not use this file except in compliance with the License.
+  You may obtain a copy of the License at
        http://www.apache.org/licenses/LICENSE-2.0
-
-	Unless required by applicable law or agreed to in writing, software
-	distributed under the License is distributed on an "AS IS" BASIS,
-	WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-	See the License for the specific language governing permissions and
-	limitations under the License.
-	
+  Unless required by applicable law or agreed to in writing, software
+  distributed under the License is distributed on an "AS IS" BASIS,
+  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and
+  limitations under the License.
+  
   ACE-GPIO sample for use with Ace IO Shield.
   uses opto in, opto out, and GPIO's (configurable as both triggers and outputs).
   NOTE:
@@ -30,15 +27,15 @@ enum CameraLineMode {Camera_Input, Camera_Output};
 // ****************************************************************************
 // CONFIGURATION:
 
-CameraType MyCamera                                   = GIGE_CAMERA_GPIO;             // Type of Camera
-CameraLineMode Line3_Mode                             = Camera_Input;                 // GPIO 1 mode on camera
-CameraLineMode Line4_Mode                             = Camera_Input;                 // GPIO 2 mode on camera
-CameraTriggerSource myTriggerSource                   = Input_Line1;                  // Trigger Source
-bool useFrameTriggerWait                              = false;                        // Shall we use FrameTriggerWait?
-CameraFrameTriggerWaitSource myFrameTriggerWaitSource = Output_Line2;                 // If yes, where is FrameTriggerWait?
-long frameRate                                        = 30;                           // If no, trigger at this frame rate
-long triggerWidth                                     = 2;                            // width of trigger pulse in microseconds (if using trigger-width exposure. remember to set ExposureOverlapTimeMax in camera.)
-
+CameraType MyCamera                                   = USB_CAMERA;             // Type of Camera
+CameraLineMode Line3_Mode                             = Camera_Output;          // GPIO 1 mode on camera
+CameraLineMode Line4_Mode                             = Camera_Output;          // GPIO 2 mode on camera
+CameraTriggerSource myTriggerSource                   = Input_Line1;            // Trigger Source
+bool useFrameTriggerWait                              = false;                  // Shall we use FrameTriggerWait?
+CameraFrameTriggerWaitSource myFrameTriggerWaitSource = Output_Line2;           // If yes, where is FrameTriggerWait?
+long frameRate                                        = 10;                      // If no, trigger at this frame rate
+long triggerWidth                                     = 100;                   // width of trigger pulse in microseconds (if using trigger-width exposure. remember to set ExposureOverlapTimeMax in camera.)
+long triggerWidthIncrement                            = 100;
 // ****************************************************************************
 
 // I/O pins for camera
@@ -153,7 +150,6 @@ void setup()
   digitalWrite(Line1, LOW); // start with a low on the opto trigger
   pinMode(Line2Power, OUTPUT); // powersource for output 1
   digitalWrite(Line2Power, HIGH); // turn on opto output power
-  pinMode(Line2, INPUT_PULLUP); // measure opto output
 
   // configure GPIO's appropriatley
   if (MyCamera == USB_CAMERA) // USB camera supports two gpio
@@ -192,16 +188,27 @@ void setup()
 
   //example of using interrupts (ie: trigger when a signal change is detected)
   //attachInterrupt(digitalPinToInterrupt(Line2), InterruptRoutine, FALLING);
+  Serial.begin(9600);
 }
 
 // the loop function triggers the camera continuously
 void loop()
 {
+  // added for increasing trigger width with each image
+ // if (triggerWidth < 32800)
+  //  triggerWidth = triggerWidth + triggerWidthIncrement;
+    
+  Serial.print(triggerWidth);
+  Serial.println();
+  
   // Example 2: trigger by polling frame trigger wait
   if (useFrameTriggerWait == true)
   {
     if (PollFrameTriggerWait(myFrameTriggerWaitSource) == false) // wait for frame trigger wait
+    {
+      delayMicroseconds(1000); // added for ace2 FrameTriggerWait
       SendTrigger(myTriggerSource, triggerWidth);
+    }
   }
   if (useFrameTriggerWait == false)
   {
@@ -222,5 +229,3 @@ void InterruptRoutine()
 {
   //SendTrigger(myTriggerSource, triggerWidth);
 }
-
-
